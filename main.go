@@ -33,6 +33,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/prometheus/snmp_exporter/collector"
 	"github.com/prometheus/snmp_exporter/config"
 )
 
@@ -100,8 +101,8 @@ func handler(w http.ResponseWriter, r *http.Request, logger log.Logger) {
 
 	start := time.Now()
 	registry := prometheus.NewRegistry()
-	collector := collector{target: target, module: module, logger: logger}
-	registry.MustRegister(collector)
+	c := collector.Collector{Target: target, Module: module, Logger: logger}
+	registry.MustRegister(c)
 	// Delegate http serving to Prometheus client library, which will call collector.Collect.
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)

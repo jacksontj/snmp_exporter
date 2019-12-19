@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package collector
 
 import (
 	"encoding/binary"
@@ -194,23 +194,23 @@ func buildMetricTree(metrics []*config.Metric) *MetricNode {
 	return metricTree
 }
 
-type collector struct {
-	target string
-	module *config.Module
-	logger log.Logger
+type Collector struct {
+	Target string
+	Module *config.Module
+	Logger log.Logger
 }
 
 // Describe implements Prometheus.Collector.
-func (c collector) Describe(ch chan<- *prometheus.Desc) {
+func (c Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- prometheus.NewDesc("dummy", "dummy", nil, nil)
 }
 
 // Collect implements Prometheus.Collector.
-func (c collector) Collect(ch chan<- prometheus.Metric) {
+func (c Collector) Collect(ch chan<- prometheus.Metric) {
 	start := time.Now()
-	pdus, err := ScrapeTarget(c.target, c.module, c.logger)
+	pdus, err := ScrapeTarget(c.Target, c.Module, c.Logger)
 	if err != nil {
-		level.Info(c.logger).Log("msg", "Error scraping target", "err", err)
+		level.Info(c.Logger).Log("msg", "Error scraping target", "err", err)
 		ch <- prometheus.NewInvalidMetric(prometheus.NewDesc("snmp_error", "Error scraping target", nil, nil), err)
 		return
 	}
@@ -227,7 +227,7 @@ func (c collector) Collect(ch chan<- prometheus.Metric) {
 		oidToPdu[pdu.Name[1:]] = pdu
 	}
 
-	metricTree := buildMetricTree(c.module.Metrics)
+	metricTree := buildMetricTree(c.Module.Metrics)
 	// Look for metrics that match each pdu.
 PduLoop:
 	for oid, pdu := range oidToPdu {
@@ -241,7 +241,7 @@ PduLoop:
 			}
 			if head.metric != nil {
 				// Found a match.
-				samples := pduToSamples(oidList[i+1:], &pdu, head.metric, oidToPdu, c.logger)
+				samples := pduToSamples(oidList[i+1:], &pdu, head.metric, oidToPdu, c.Logger)
 				for _, sample := range samples {
 					ch <- sample
 				}
