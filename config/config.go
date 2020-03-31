@@ -224,7 +224,7 @@ type Auth struct {
 	Password      Secret `yaml:"password,omitempty" toml:"password"`
 	AuthProtocol  string `yaml:"auth_protocol,omitempty" toml:"auth_protocol"`
 	PrivProtocol  string `yaml:"priv_protocol,omitempty" toml:"priv_protocol"`
-	PrivPassword  Secret `yaml:"priv_password,omitempty" toml:"priov_password"`
+	PrivPassword  Secret `yaml:"priv_password,omitempty" toml:"priv_password"`
 	ContextName   string `yaml:"context_name,omitempty" toml:"context_name"`
 }
 
