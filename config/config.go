@@ -62,22 +62,28 @@ var (
 type Config map[string]*Module
 
 type WalkParams struct {
-	Version        int           `yaml:"version,omitempty" toml:"version"`
-	MaxRepetitions uint8         `yaml:"max_repetitions,omitempty" toml:"max_repetitions"`
-	Retries        int           `yaml:"retries,omitempty" toml:"retries"`
-	Timeout        time.Duration `yaml:"timeout,omitempty" toml:"timeout"`
-	Auth           Auth          `yaml:"auth,omitempty" toml:"auth"`
+	Version        int           `yaml:"version,omitempty"`
+	MaxRepetitions uint8         `yaml:"max_repetitions,omitempty"`
+	Retries        int           `yaml:"retries,omitempty"`
+	Timeout        time.Duration `yaml:"timeout,omitempty"`
+	Auth           Auth          `yaml:"auth,omitempty"`
 }
 
 type Module struct {
 	// A list of OIDs.
-	Walk       []string   `yaml:"walk,omitempty" toml:"walk"`
-	Get        []string   `yaml:"get,omitempty" toml:"get"`
-	Metrics    []*Metric  `yaml:"metrics" toml:"metrics"`
-	WalkParams WalkParams `yaml:",inline" toml:"walk_params"`
+	Walk       []string   `yaml:"walk,omitempty"`
+	Get        []string   `yaml:"get,omitempty"`
+	Metrics    []*Metric  `yaml:"metrics"`
+	WalkParams WalkParams `yaml:",inline"`
 }
 
-func (c *Module) Validate() error {
+func (c *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	*c = DefaultModule
+	type plain Module
+	if err := unmarshal((*plain)(c)); err != nil {
+		return err
+	}
+
 	wp := c.WalkParams
 
 	if wp.Version < 1 || wp.Version > 3 {
@@ -110,16 +116,6 @@ func (c *Module) Validate() error {
 		}
 	}
 	return nil
-}
-
-func (c *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	*c = DefaultModule
-	type plain Module
-	if err := unmarshal((*plain)(c)); err != nil {
-		return err
-	}
-
-	return c.Validate()
 }
 
 // ConfigureSNMP sets the various version and auth settings.
@@ -174,28 +170,28 @@ func (c WalkParams) ConfigureSNMP(g *gosnmp.GoSNMP) {
 }
 
 type Metric struct {
-	Name           string                     `yaml:"name" toml:"name"`
-	Oid            string                     `yaml:"oid" toml:"oid"`
-	Type           string                     `yaml:"type" toml:"type"`
-	Help           string                     `yaml:"help" toml:"help"`
-	Indexes        []*Index                   `yaml:"indexes,omitempty" toml:"indexes"`
-	Lookups        []*Lookup                  `yaml:"lookups,omitempty" toml:"lookups"`
-	RegexpExtracts map[string][]RegexpExtract `yaml:"regex_extracts,omitempty" toml:"regex_extracts"`
-	EnumValues     map[int]string             `yaml:"enum_values,omitempty" toml:"enum_values"`
+	Name           string                     `yaml:"name"`
+	Oid            string                     `yaml:"oid"`
+	Type           string                     `yaml:"type"`
+	Help           string                     `yaml:"help"`
+	Indexes        []*Index                   `yaml:"indexes,omitempty"`
+	Lookups        []*Lookup                  `yaml:"lookups,omitempty"`
+	RegexpExtracts map[string][]RegexpExtract `yaml:"regex_extracts,omitempty"`
+	EnumValues     map[int]string             `yaml:"enum_values,omitempty"`
 }
 
 type Index struct {
-	Labelname string `yaml:"labelname" toml:"labelname"`
-	Type      string `yaml:"type" toml:"type"`
-	FixedSize int    `yaml:"fixed_size,omitempty" toml:"fixed_size"`
-	Implied   bool   `yaml:"implied,omitempty" toml:"implied"`
+	Labelname string `yaml:"labelname"`
+	Type      string `yaml:"type"`
+	FixedSize int    `yaml:"fixed_size,omitempty"`
+	Implied   bool   `yaml:"implied,omitempty"`
 }
 
 type Lookup struct {
-	Labels    []string `yaml:"labels" toml:"labels"`
-	Labelname string   `yaml:"labelname" toml:"labelname"`
-	Oid       string   `yaml:"oid,omitempty" toml:"oid"`
-	Type      string   `yaml:"type,omitempty" toml:"type"`
+	Labels    []string `yaml:"labels"`
+	Labelname string   `yaml:"labelname"`
+	Oid       string   `yaml:"oid,omitempty"`
+	Type      string   `yaml:"type,omitempty"`
 }
 
 // Secret is a string that must not be revealed on marshaling.
@@ -218,19 +214,19 @@ func (s Secret) MarshalYAML() (interface{}, error) {
 }
 
 type Auth struct {
-	Community     Secret `yaml:"community,omitempty" toml:"community"`
-	SecurityLevel string `yaml:"security_level,omitempty" toml:"security_level"`
-	Username      string `yaml:"username,omitempty" toml:"username"`
-	Password      Secret `yaml:"password,omitempty" toml:"password"`
-	AuthProtocol  string `yaml:"auth_protocol,omitempty" toml:"auth_protocol"`
-	PrivProtocol  string `yaml:"priv_protocol,omitempty" toml:"priv_protocol"`
-	PrivPassword  Secret `yaml:"priv_password,omitempty" toml:"priv_password"`
-	ContextName   string `yaml:"context_name,omitempty" toml:"context_name"`
+	Community     Secret `yaml:"community,omitempty"`
+	SecurityLevel string `yaml:"security_level,omitempty"`
+	Username      string `yaml:"username,omitempty"`
+	Password      Secret `yaml:"password,omitempty"`
+	AuthProtocol  string `yaml:"auth_protocol,omitempty"`
+	PrivProtocol  string `yaml:"priv_protocol,omitempty"`
+	PrivPassword  Secret `yaml:"priv_password,omitempty"`
+	ContextName   string `yaml:"context_name,omitempty"`
 }
 
 type RegexpExtract struct {
-	Value string `yaml:"value" toml:"value"`
-	Regex Regexp `yaml:"regex" toml:"regex"`
+	Value string `yaml:"value"`
+	Regex Regexp `yaml:"regex"`
 }
 
 func (c *RegexpExtract) UnmarshalYAML(unmarshal func(interface{}) error) error {
